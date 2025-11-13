@@ -1,0 +1,176 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>MediCart 💊</title>
+  <style>
+    body {
+      font-family: 'Poppins', sans-serif;
+      margin: 0;
+      padding: 20px;
+      background: #f6f6f6;
+    }
+    h1 {
+      color: #00897B;
+    }
+    .container {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+      gap: 20px;
+      margin-top: 20px;
+    }
+    .card {
+      background: white;
+      padding: 15px;
+      border-radius: 10px;
+      box-shadow: 0 2px 5px rgba(0,0,0,0.1);
+      transition: transform 0.2s;
+    }
+    .card:hover {
+      transform: translateY(-5px);
+    }
+    .card h3 {
+      color: #00796B;
+      margin-bottom: 5px;
+    }
+    .btn {
+      background-color: #00796B;
+      color: white;
+      border: none;
+      padding: 8px 12px;
+      border-radius: 5px;
+      cursor: pointer;
+      margin-top: 5px;
+    }
+    .btn:hover {
+      background-color: #004D40;
+    }
+    .cart-summary {
+      margin-top: 25px;
+      background: white;
+      padding: 15px;
+      border-radius: 8px;
+      box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+      display: inline-block;
+    }
+    #buyBtn {
+      background-color: #e91e63;
+    }
+    #buyBtn:hover {
+      background-color: #ad1457;
+    }
+    form {
+      background: white;
+      padding: 15px;
+      border-radius: 10px;
+      box-shadow: 0 2px 5px rgba(0,0,0,0.1);
+      margin-bottom: 20px;
+      width: 350px;
+    }
+    input, textarea {
+      width: 100%;
+      padding: 8px;
+      margin: 5px 0 10px;
+      border-radius: 5px;
+      border: 1px solid #ccc;
+    }
+  </style>
+</head>
+<body>
+  <h1>💊 MediCart</h1>
+  <p>Browse and add your own medical items.</p>
+
+  <!-- ✅ Add Item Form -->
+  <form id="addItemForm">
+    <h3>Add New Item</h3>
+    <input type="text" id="name" placeholder="Item Name" required />
+    <input type="text" id="type" placeholder="Type (e.g. Tablet, Syrup)" required />
+    <input type="number" id="price" placeholder="Price (₹)" required />
+    <textarea id="description" placeholder="Description" rows="2"></textarea>
+    <button type="submit" class="btn">Add Item</button>
+  </form>
+
+  <div id="items" class="container"></div>
+
+  <div class="cart-summary">
+    <h3>🛒 Cart Summary</h3>
+    <p id="total">Total: ₹0</p>
+    <button id="buyBtn" class="btn">Buy Now</button>
+  </div>
+
+  <script>
+    const container = document.getElementById("items");
+    const totalDisplay = document.getElementById("total");
+    const buyBtn = document.getElementById("buyBtn");
+    const form = document.getElementById("addItemForm");
+
+    let total = 0;
+
+    // ✅ Load items from backend
+    function loadItems() {
+      fetch("/api/items")
+        .then(res => res.json())
+        .then(items => {
+          container.innerHTML = "";
+          items.forEach(item => {
+            const div = document.createElement("div");
+            div.className = "card";
+            div.innerHTML = `
+              <h3>${item.name}</h3>
+              <p><strong>Type:</strong> ${item.type}</p>
+              <p><strong>Price:</strong> ₹${item.price}</p>
+              <p>${item.description}</p>
+              <button class="btn" onclick="addToCart(${item.price})">Add to Cart</button>
+            `;
+            container.appendChild(div);
+          });
+        });
+    }
+
+    // ✅ Add to cart
+    function addToCart(price) {
+      total += price;
+      totalDisplay.textContent = "Total: ₹" + total;
+    }
+
+    // ✅ Handle buy button
+    buyBtn.addEventListener("click", () => {
+      if (total === 0) {
+        alert("🛒 Your cart is empty!");
+      } else {
+        alert("✅ Purchase successful! You paid ₹" + total);
+        total = 0;
+        totalDisplay.textContent = "Total: ₹0";
+      }
+    });
+
+    // ✅ Handle add item form submission
+    form.addEventListener("submit", e => {
+      e.preventDefault();
+      const newItem = {
+        name: document.getElementById("name").value,
+        type: document.getElementById("type").value,
+        price: parseFloat(document.getElementById("price").value),
+        description: document.getElementById("description").value
+      };
+
+      fetch("/api/items", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(newItem)
+      })
+        .then(res => res.json())
+        .then(data => {
+          alert(data.message);
+          form.reset();
+          loadItems();
+        })
+        .catch(err => console.error("Error:", err));
+    });
+
+    // Load items initially
+    loadItems();
+  </script>
+</body>
+</html>
